@@ -1,7 +1,7 @@
 ---
 title: "Case Study 04"
-author: Your Name
-date: August 1, 2020
+author: Willow Flood
+date: September, 27 2022
 output: github_document
 ---
 
@@ -20,3 +20,21 @@ Comments
 ```{r}
 plot(pressure)
 ```
+
+library(nycflights13)
+library(tidyverse)
+
+View(flights)
+View(airports)
+
+flights_arrange = arrange(flights, desc(distance))
+
+flights_slice = slice(flights_arrange, 1)
+
+farthest_airport = 
+  left_join(flights_slice, airports, by = c("dest" = "faa")) %>%
+  select(name) %>%
+  as.character()
+
+
+
