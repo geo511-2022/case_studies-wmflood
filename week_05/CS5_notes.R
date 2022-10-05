@@ -1,18 +1,11 @@
----
-title: "Case Study 05"
-author: Willow Flood
-date: October 4, 2022
-output: github_document
----
-
 library(sf) 
 library(tidyverse)
 library(spData)
 library(units)
 
 
-data("world")
-data("us_states")
+data("world") #pulling the world data from spData
+data("us_states") #pulling from spData
 
 albers="+proj=aea +lat_1=29.5 +lat_2=45.5 +lat_0=37.5 +lon_0=-96 +x_0=0 +y_0=0
 +ellps=GRS80 +datum=NAD83 +units=m +no_defs"
@@ -33,3 +26,10 @@ can_ny_border
 border_area = st_area(can_ny)
 
 units(border_area) <- as_units("km^2")
+
+##Extra time leaflet map
+library(leaflet)
+
+leaflet(border_area) %>%
+  addTiles() %>%
+  addPolygons()
