@@ -7,7 +7,9 @@ output:
   html_document: default
   powerpoint_presentation: default
   word_document: default
-knit: {rmarkdown::render("case_study_08.Rmd", output_format = "all")}
+knit: (function(inputFile, encoding){
+  rmarkdown::render(inputFile, encoding = encoding,
+  output_dir = "my-output-path", output_format = "all") })
 ---
 
 ```{r}
