@@ -1,21 +1,13 @@
----
-title: "Case Study 09"
-author: Willow Flood
-date: November 1, 2022
-output: github_document
----
-The libraries used in this case study
-```{r}
 library(sf)
 library(tidyverse)
 library(ggmap)
 library(rnoaa)
 library(spData)
-```
-The data used in this case study
-```{r}
-data(world) #from spData
-data(us_states) #from spData
+
+
+data(world)
+data(us_states)
+
 #Download zipped data from noaa with storm track information
 dataurl="https://www.ncei.noaa.gov/data/international-best-track-archive-for-climate-stewardship-ibtracs/v04r00/access/shapefile/IBTrACS.NA.list.v04r00.points.zip"
 tdir=tempdir()
@@ -23,20 +15,14 @@ download.file(dataurl,destfile=file.path(tdir,"temp.zip"))
 #unzip the compressed folder
 unzip(file.path(tdir,"temp.zip"),exdir = tdir) 
 storm_data <- read_sf(list.files(tdir,pattern=".shp",full.names = T))
-```
-Filtering the data so that it only contains from 1950 to present
-```{r}
+#filtering the storm data to only include 1950 to present
 stormData = storm_data %>%
   filter(SEASON > 1949) %>%
   mutate_if(is.numeric, function(x) ifelse(x==-999.0,NA,x)) %>%
   mutate(decade=(floor(year/10)*10))
-```
-Creating a bounding box of the data
-```{r}
+#creating a region using a bounding box
 region = st_bbox(stormData)
-```
-Making the plot faceted by decade
-```{r}
+#making the plot
 storm_map = ggplot(world) +
   geom_sf() +
   facet_wrap(~decade) +
@@ -46,14 +32,12 @@ storm_map = ggplot(world) +
   scale_fill_distiller(palette="YlOrRd", 
                        trans="log", 
                        direction=-1, 
-                       breaks = c(1,10,100,1000)) +
-  coord_sf(ylim=region[c(2,4)], xlim=region[c(1,3)]) 
+                       breaks = c(1,10,100,1000)) + #to set the color ramp
+  coord_sf(ylim=region[c(2,4)], xlim=region[c(1,3)]) #to crop the plot to the region
 storm_map
-```
-Calculating the five states that have the most storms
-```{r}
-states = st_transform(us_states, crs = st_crs(stormData)) 
-colnames(states)[2] = "state" 
+#calculating the five states with the most storms
+states = st_transform(us_states, crs = st_crs(stormData)) #reprojecting the data
+colnames(states)[2] = "state" #renaming the NAME column to state
 storm_states <- st_join(stormData, states, join = st_intersects,left = F)
 storms_top5 = storm_states %>%
   group_by(state) %>%
@@ -62,4 +46,3 @@ storms_top5 = storm_states %>%
   st_set_geometry(NULL) %>%
   slice(1:5)
 storms_top5
-```
