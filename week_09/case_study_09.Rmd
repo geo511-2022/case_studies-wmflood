@@ -5,7 +5,7 @@ date: November 1, 2022
 output: github_document
 ---
 The libraries used in this case study
-```{r}
+```{r message = FALSE}
 library(sf)
 library(tidyverse)
 library(ggmap)
@@ -14,13 +14,11 @@ library(spData)
 ```
 The data used in this case study
 ```{r}
-data(world) #from spData
-data(us_states) #from spData
-#Download zipped data from noaa with storm track information
+data(world) 
+data(us_states) 
 dataurl="https://www.ncei.noaa.gov/data/international-best-track-archive-for-climate-stewardship-ibtracs/v04r00/access/shapefile/IBTrACS.NA.list.v04r00.points.zip"
 tdir=tempdir()
 download.file(dataurl,destfile=file.path(tdir,"temp.zip"))
-#unzip the compressed folder
 unzip(file.path(tdir,"temp.zip"),exdir = tdir) 
 storm_data <- read_sf(list.files(tdir,pattern=".shp",full.names = T))
 ```
