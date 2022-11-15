@@ -20,7 +20,7 @@ getDoParWorkers() #Check registered cores
 #registerDoParallel() This is the function to run if you have more than 1 core to do parallel processing on
 
 # go to  http://api.census.gov/data/key_signup.html and get a key, then run the line below with your key.  Key is not pushed to GitHub.
-census_api_key("26ab8d18f86e048d544c4fcffce3d5a20be623cf", install = TRUE)
+census_api_key("Your API Key Here", install = TRUE)
 ```
 
 ```{r}
