@@ -29,7 +29,7 @@ download.file(lulc_url,destfile="data/MCD12Q1.051_aid0001.nc", mode="wb")
 download.file(lst_url,destfile="data/MOD11A2.006_aid0001.nc", mode="wb")
 ```
 Loading the data into R:
-```{r message=FALSE}
+```{r message=FALSE warning = FALSE}
 #Any warnings can be ignored
 lulc=stack("data/MCD12Q1.051_aid0001.nc",varname="Land_Cover_Type_1")
 lst=stack("data/MOD11A2.006_aid0001.nc",varname="LST_Day_1km")
@@ -137,7 +137,7 @@ dates = getZ(lst)
 lst_dates = bind_cols(et, dates)
 ```
 Plotting the data:
-```{r}
+```{r warning=FALSE}
 ggplot(lst_dates, aes(x = ...2, y = ...1)) +
   geom_point() +
   geom_smooth(span = 0.02, n = 400) +
@@ -157,5 +157,7 @@ names(lst_month)=month.name
 ```
 Plotting the map for each month:
 ```{r}
-plot(lst_month) #need to update to use the gplot function
+gplot(lst_month) +
+  geom_raster(aes(fill = as.factor(value))) +
+  
 ```
