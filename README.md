@@ -26,3 +26,5 @@ library(testthat)
 test_dir(test_path(), reporter="Summary")
 ```
 
+## This repository now holds the case study work for for my Spatial Data Science class. That's pretty cool! I wanted to test out to see how this worked, so here's hoping :)
+## Best, Willow

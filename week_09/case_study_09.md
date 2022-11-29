@@ -1,19 +1,21 @@
----
-title: "Case Study 09"
-author: Willow Flood
-date: November 1, 2022
-output: github_document
----
+Case Study 09
+================
+Willow Flood
+November 1, 2022
+
 The libraries used in this case study
-```{r message = FALSE}
+
+``` r
 library(sf)
 library(tidyverse)
 library(ggmap)
 library(rnoaa)
 library(spData)
 ```
+
 The data used in this case study
-```{r}
+
+``` r
 data(world) 
 data(us_states) 
 dataurl="https://www.ncei.noaa.gov/data/international-best-track-archive-for-climate-stewardship-ibtracs/v04r00/access/shapefile/IBTrACS.NA.list.v04r00.points.zip"
@@ -22,19 +24,25 @@ download.file(dataurl,destfile=file.path(tdir,"temp.zip"))
 unzip(file.path(tdir,"temp.zip"),exdir = tdir) 
 storm_data <- read_sf(list.files(tdir,pattern=".shp",full.names = T))
 ```
+
 Filtering the data so that it only contains from 1950 to present
-```{r}
+
+``` r
 stormData = storm_data %>%
   filter(SEASON > 1949) %>%
   mutate_if(is.numeric, function(x) ifelse(x==-999.0,NA,x)) %>%
   mutate(decade=(floor(year/10)*10))
 ```
+
 Creating a bounding box of the data
-```{r}
+
+``` r
 region = st_bbox(stormData)
 ```
+
 Making the plot faceted by decade
-```{r}
+
+``` r
 storm_map = ggplot(world) +
   geom_sf() +
   facet_wrap(~decade) +
@@ -48,8 +56,11 @@ storm_map = ggplot(world) +
   coord_sf(ylim=region[c(2,4)], xlim=region[c(1,3)]) 
 storm_map
 ```
+
+![](case_study_09_files/figure-gfm/unnamed-chunk-5-1.png)<!-- -->
 Calculating the five states that have the most storms
-```{r}
+
+``` r
 states = st_transform(us_states, crs = st_crs(stormData)) 
 colnames(states)[2] = "state" 
 storm_states <- st_join(stormData, states, join = st_intersects,left = F)
@@ -61,3 +72,12 @@ storms_top5 = storm_states %>%
   slice(1:5)
 storms_top5
 ```
+
+    ## # A tibble: 5 × 2
+    ##   state          storms
+    ##   <chr>           <int>
+    ## 1 Florida            86
+    ## 2 North Carolina     66
+    ## 3 Georgia            58
+    ## 4 Texas              54
+    ## 5 Louisiana          52

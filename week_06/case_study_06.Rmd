@@ -1,7 +1,41 @@
 ---
 title: "Case Study 06"
-author: Your Name
-date: August 1, 2020
+author: Willow Flood
+date: October 11, 2022
 output: github_document
 ---
- 
+
+library(raster)
+library(sp)
+library(spData)
+library(tidyverse)
+library(sf)
+library(ncdf4)
+
+data(world)
+
+download.file("https://crudata.uea.ac.uk/cru/data/temperature/absolute.nc","crudata.nc")
+tmean=raster("crudata.nc")
+
+world6 = filter(world, !continent == "Antarctica") 
+world6_sp = as(world6, "Spatial")
+
+tmax_annual = max(tmean)
+names(tmax_annual) = "tmax"
+
+tmax_country = raster :: extract(tmax_annual, world6_sp,
+                  fun=max, na.rm=TRUE, small=TRUE, sp=TRUE) %>%
+  st_as_sf(world6_sp)
+
+tmax_country_plot = ggplot(tmax_country, aes(fill = tmax)) +
+  geom_sf() +
+  scale_fill_viridis_c(name="Annual\nMaximum\nTemperature (C)") +
+  theme(legend.position = 'bottom')
+tmax_country_plot
+
+hottest_continents = tmax_country %>% 
+  group_by(continent) %>%  
+  select(name_long, continent, tmax) %>% 
+  arrange(.by_group = TRUE) %>% 
+  st_set_geometry(NULL) %>% 
+  slice_max(order_by = tmax) 

@@ -1,7 +1,7 @@
 ---
 title: "Case Study 04"
-author: Your Name
-date: August 1, 2020
+author: Willow Flood
+date: September, 27 2022
 output: github_document
 ---
 
@@ -20,3 +20,23 @@ Comments
 ```{r}
 plot(pressure)
 ```
+
+library(nycflights13)
+library(tidyverse)
+
+##The tables for the nycflights13 are flights, airports, planes, weather, airlines
+
+View(flights)
+View(airports)
+
+flights_arrange = arrange(flights, desc(distance)) ##this arranged the data in descending order based on the distance column
+
+flights_slice = slice(flights_arrange, 1) ##this sliced the table so that only the first row was kept
+
+farthest_airport = 
+  left_join(flights_slice, airports, by = c("dest" = "faa")) %>% ##kept the flights_slice data set and joined the other columns from the airports table
+  select(name) %>% ##this selected the name column
+  as.character() ##this wrote the name column as characters so that farthest_airport was assigned to the value
+
+
+

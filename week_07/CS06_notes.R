@@ -1,11 +1,3 @@
----
-title: "Case Study 07"
-author: Willow Flood
-date: October 18, 2022
-output: github_document
----
-
-```{r}
 library(tidyverse)
 library(reprex)
 library(sf)
@@ -18,4 +10,3 @@ ggplot(world,aes(x=gdpPercap, y=continent, color=continent))+
   geom_density(alpha=0.5,color=F)
 
 reprex(venue = 'gh')
-```

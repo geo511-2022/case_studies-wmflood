@@ -1,7 +1,198 @@
 ---
 title: "Case Study 10"
-author: Your Name
-date: August 1, 2020
+author: Willow Flood
+date: November 8, 2022
 output: github_document
 ---
- 
+#Data pre-processing
+##The libraries for this case study
+```{r message=FALSE}
+library(raster)
+library(rasterVis)
+library(rgdal)
+library(ggmap)
+library(tidyverse)
+library(knitr)
+library(ncdf4)
+```
+##Creating a folder to hold the downloaded data
+```{r}
+dir.create("data",showWarnings = F) #create a folder to hold the data
+```
+##Downloading the data
+```{r message=FALSE}
+lulc_url="https://github.com/adammwilson/DataScienceData/blob/master/inst/extdata/appeears/MCD12Q1.051_aid0001.nc?raw=true"
+lst_url="https://github.com/adammwilson/DataScienceData/blob/master/inst/extdata/appeears/MOD11A2.006_aid0001.nc?raw=true"
+
+# download them
+download.file(lulc_url,destfile="data/MCD12Q1.051_aid0001.nc", mode="wb")
+download.file(lst_url,destfile="data/MOD11A2.006_aid0001.nc", mode="wb")
+```
+Loading the data into R:
+```{r message=FALSE, warning = FALSE}
+#Any warnings can be ignored
+lulc=stack("data/MCD12Q1.051_aid0001.nc",varname="Land_Cover_Type_1")
+lst=stack("data/MOD11A2.006_aid0001.nc",varname="LST_Day_1km")
+```
+##Exploring the Land Use Land Cover data
+```{r}
+plot(lulc)
+```
+Picking one year to work with to make things simpler to work with:
+```{r}
+lulc_13 = lulc[[13]]
+plot(lulc_13)
+```
+##Processing the Landcover data
+The land cover classes are assigned from the MODIS website
+```{r}
+Land_Cover_Type_1 = c(
+    Water = 0, 
+    `Evergreen Needleleaf forest` = 1, 
+    `Evergreen Broadleaf forest` = 2,
+    `Deciduous Needleleaf forest` = 3, 
+    `Deciduous Broadleaf forest` = 4,
+    `Mixed forest` = 5, 
+    `Closed shrublands` = 6,
+    `Open shrublands` = 7,
+    `Woody savannas` = 8, 
+    Savannas = 9,
+    Grasslands = 10,
+    `Permanent wetlands` = 11, 
+    Croplands = 12,
+    `Urban & built-up` = 13,
+    `Cropland/Natural vegetation mosaic` = 14, 
+    `Snow & ice` = 15,
+    `Barren/Sparsely vegetated` = 16, 
+    Unclassified = 254,
+    NoDataFill = 255)
+
+lcd=data.frame(
+  ID=Land_Cover_Type_1,
+  landcover=names(Land_Cover_Type_1),
+  col=c("#000080","#008000","#00FF00", "#99CC00","#99FF99", "#339966", "#993366", "#FFCC99", "#CCFFCC", "#FFCC00", "#FF9900", "#006699", "#FFFF00", "#FF0000", "#999966", "#FFFFFF", "#808080", "#000000", "#000000"),
+  stringsAsFactors = F)
+# colors from https://lpdaac.usgs.gov/about/news_archive/modisterra_land_cover_types_yearly_l3_global_005deg_cmg_mod12c1
+kable(head(lcd))
+```
+Convert the lulc_13 to a factor (catagorical) raster.
+```{r}
+# convert to factor raster (easy). This creates a raster attribute table (RAT)
+lulc_13=as.factor(lulc_13)
+
+# update the RAT with a left join
+levels(lulc_13)=left_join(levels(lulc_13)[[1]],lcd)
+```
+Plotting to see how it looks:
+```{r}
+gplot(lulc_13)+
+  geom_raster(aes(fill=as.factor(value)))+
+  scale_fill_manual(values=levels(lulc_13)[[1]]$col,
+                    labels=levels(lulc_13)[[1]]$landcover,
+                    name="Landcover Type")+
+  coord_equal()+
+  theme(legend.position = "bottom")+
+  guides(fill=guide_legend(ncol=1,byrow=TRUE))
+```
+##Exploring the Land Surface Temperature data
+```{r}
+plot(lst[[1:12]])
+```
+Convert lst from Kelvin to Celsius:
+```{r}
+offs(lst)=-273.15
+plot(lst[[1:10]])
+```
+Adding dates to Z time
+```{r}
+names(lst)[1:5] #default dates
+```
+Need to convert them to an R date and drop the "X":
+```{r}
+tdates=names(lst)%>%
+  sub(pattern="X",replacement="")%>%
+  as.Date("%Y.%m.%d")
+
+names(lst)=1:nlayers(lst)
+lst=setZ(lst,tdates)
+```
+#Part 1:Extract timeseries for a point
+Extract LST values for a single point and plot them.
+```{r}
+#Spatial point to extract data from
+lw = SpatialPoints(data.frame(x= -78.791547,y=43.007211)) 
+#Setting the projection of the point
+projection(lw) <- "+proj=longlat"
+#Transforming the point to the raster projection
+lw = spTransform(lw, CRSobj = crs(lst, asText = TRUE))
+```
+Extracting the lst data from that point:
+```{r}
+e = raster::extract(lst,lw,buffer=1000,fun=mean,na.rm=T)
+et = t(e)
+```
+Extracting the dates and creating a data frame
+```{r message=FALSE}
+dates = getZ(lst)
+lst_dates = bind_cols(et, dates)
+```
+Plotting the data:
+```{r warning=FALSE}
+ggplot(lst_dates, aes(x = ...2, y = ...1)) +
+  geom_point() +
+  geom_smooth(span = 0.02, n = 400) +
+  labs(title = "Monthly Mean Land Surface Temperature",
+       x = "Date",
+       y = "Mean Land Surface Temperature")
+```
+#Part 2: Summarize weekly data to monthly climatologies
+Creating the monthly mean variables:
+```{r}
+#Sub-setting the months
+tmonth = as.numeric(format(getZ(lst),"%m"))
+#Summarizing the mean value per month
+lst_month = stackApply(lst, indices = tmonth, fun = mean)
+#Setting the names of the layers to months
+names(lst_month)=month.name
+```
+Plotting the map for each month:
+```{r}
+gplot(lst_month)+
+  geom_raster(aes(fill = value))+
+  facet_wrap(~ variable)+
+  scale_fill_gradient(low='blue',high='red')+
+  labs(x = "X", y = "Y")+
+  theme(axis.text.x=element_blank(),axis.text.y=element_blank())
+```
+Calculating the monthly mean for the entire image.
+```{r}
+cellStats(lst_month, mean) %>% 
+  as.data.frame() %>% 
+  rename(Mean = ".") %>% 
+  kable()
+```
+#Part 3: Summarize Land Surface Temperature by Land Cover
+Resampling the land cover data.
+```{r}
+lulc2 <- resample(lulc, lst, method="ngb")
+```
+Extracting the values from lst_month and lulc2, gathering the data, converting the ID to numeric, joining the data to the data frame, filtering the data to the specifications.
+```{r}
+lcds1=cbind.data.frame(
+  values(lst_month),
+  ID=values(lulc2[[1]]))%>%
+  na.omit() %>%
+  gather(key='month', value='value', -ID) %>%
+  mutate(ID=as.numeric(ID)) %>%
+  mutate(month=factor(month, levels=month.name, ordered=T)) %>%
+  left_join(lcd) %>%
+  filter(landcover%in%c("Urban & built-up","Deciduous Broadleaf forest"))
+```
+Plotting the new data.
+```{r}
+ggplot(lcds1)+
+  geom_point(aes(month,value))+
+  theme_bw()+
+  facet_wrap(~landcover)+
+  labs(y = "Monthly Mean Land Surface Temperature (C)")
+```
