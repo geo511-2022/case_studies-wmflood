@@ -1,7 +1,38 @@
 ---
 title: "Case Study 12"
-author: Your Name
-date: August 1, 2020
+author: Willow Flood
+date: November 29, 2022
 output: github_document
 ---
- 
+#Setting up the case study
+Libraries used in this case study.
+```{r message=FALSE, warning=FALSE}
+library(dplyr)
+library(ggplot2)
+library(ggmap)
+library(htmlwidgets)
+library(widgetframe)
+library(tidyverse)
+library(rnoaa)
+library(xts)
+library(dygraphs)
+```
+Data set worked with in this case study.
+```{r}
+d=meteo_tidy_ghcnd("USW00014733",
+                   date_min = "2016-01-01", 
+                   var = c("TMAX"),
+                   keep_flags=T) %>% 
+   mutate(date=as.Date(date),
+          tmax=as.numeric(tmax)/10)
+```
+#Building the final output
+Converting the data to an xts object
+```{r}
+d2 = xts(x = d$tmax, order.by = d$date)
+```
+Drawing the plot
+```{r}
+dygraph(data = d2, main="Daily Maximum Temperature in Buffalo, NY") %>%
+  dyRangeSelector(dateWindow = c("2020-01-01", "2020-10-31"))
+```
